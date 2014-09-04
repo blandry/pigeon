@@ -1,36 +1,57 @@
-function [utraj, xtraj] = runDircolFlapping
+function [utraj_flapping, xtraj_flapping] = runDircolFlapping
 
 options.floating = true;
-p = RigidBodyManipulator('pigeon_17.URDF', options);
+p = RigidBodyManipulator('pigeon.URDF', options);
 
-N = 11;
-minimum_duration = .1;
-maximum_duration = 3;
+p = p.weldJoint('tail_roll');
+p = p.weldJoint('tail_yaw');
+p = p.weldJoint('left_hip_roll');
+p = p.weldJoint('left_hip_pitch');
+p = p.weldJoint('left_knee_pitch');
+p = p.weldJoint('left_ankle_pitch');
+p = p.weldJoint('left_thumb_pitch');
+p = p.weldJoint('left_fingers_pitch');
+p = p.weldJoint('right_hip_roll');
+p = p.weldJoint('right_hip_pitch');
+p = p.weldJoint('right_knee_pitch');
+p = p.weldJoint('right_ankle_pitch');
+p = p.weldJoint('right_thumb_pitch');
+p = p.weldJoint('right_fingers_pitch');
+
+p = p.compile(); 
+
+N = 21;
+minimum_duration = .5;
+maximum_duration = 2;
 prog = DircolTrajectoryOptimization(p,N,[minimum_duration maximum_duration]); 
 
 prog = prog.setSolverOptions('snopt','superbasicslimit',2000);
 % prog = prog.setCheckGrad(true);
-prog = prog.addDisplayFunction(@(x)displayfun(x,N,p.getNumStates(),p.getNumInputs()));
+% prog = prog.addDisplayFunction(@(x)displayfun(x,N,p.getNumStates(),p.getNumInputs()));
 
-% Ideally this is what we want
-tol = zeros(p.getNumStates(),1);
-tol(1) = Inf; % ignore horizontal position
-% but we should make this work first
-% this only cares about the altitude
- tol = Inf*ones(p.getNumStates(),1);
- tol(3) = .1; % only require the bird to keep its altitude
-prog = prog.addStateConstraint(PeriodicConstraint(tol),{[1 N]});
+% periodicity constraint
+per_tol = Inf*ones(p.getNumStates(),1); % ignores everything
+per_tol(findCoordinateIndex(getStateFrame(p),'base_z')) = .1; % except vertical position
+per_lb = -abs(per_tol);
+per_ub = abs(per_tol);
+per_A = [speye(numel(per_tol)),-speye(numel(per_tol))];
+periodicity_constraint = LinearConstraint(per_lb,per_ub,per_A);
+prog = prog.addStateConstraint(periodicity_constraint,{[1 N]});
 
-prog = prog.addRunningCost(@cost);
+roll_index = findCoordinateIndex(getStateFrame(p),'base_roll');
+pitch_index = findCoordinateIndex(getStateFrame(p),'base_pitch');
+yaw_index = findCoordinateIndex(getStateFrame(p),'base_yaw');
+prog = prog.addRunningCost(@(t,x,u)cost(t,x,u,roll_index,pitch_index,yaw_index));
 prog = prog.addFinalCost(@finalcost);
 
 display('Finding trim conditions for initial guess...')
 [xstar,ustar] = findTrim(p);
-tf0 = 1;  % initial guess at duration 
-traj_init.x = PPTrajectory(foh([0,tf0],[double(xstar),...
-  double(xstar)+tf0*[double(xstar(23:44));zeros(22,1)]]));
-traj_init.u = ConstantTrajectory(ustar);
 
+tf0 = .5*(minimum_duration+maximum_duration);
+utraj0 = ConstantTrajectory(ustar);
+xtraj0 = ConstantTrajectory(xstar);
+traj_init.x = xtraj0;
+traj_init.u = utraj0;
 display('Starting trajectory optimization...')
 tic
 [xtraj,utraj,z,F,info] = prog.solveTraj(tf0,traj_init);
@@ -39,16 +60,19 @@ toc
 if (nargout<1)
   v = constructVisualizer(p);
   v.playback_speed = .2;
-  v.playback(xtraj,struct('slider',true));
+  v.playback(xtraj_flapping,struct('slider',true));
 end
 
 end
 
-function [g,dg] = cost(t,x,u)
-  Q = zeros(44,44);
-  Q(4:6,4:6) = 10000*eye(3); % penalize roll pitch and yaw
-  Q(26:28,26:28) = 1000*eye(3); % penalize rolldot, pitchdot, yawdot
-  R = eye(16);
+function [g,dg] = cost(t,x,u,roll_index,pitch_index,yaw_index)
+  
+  Q = zeros(numel(x));
+  Q(roll_index,roll_index) = 1000;
+  Q(pitch_index,pitch_index) = 10;
+  Q(yaw_index,yaw_index) = 1000;
+  R = zeros(numel(u));
+  
   g = x'*Q*x + u'*R*u;
   if (nargout>1)
     dg = [0,2*x'*Q,2*u'*R];
@@ -58,7 +82,7 @@ end
 function [h,dh] = finalcost(t,x)
   h = t;
   if (nargout>1)
-    dh = [1,zeros(1,size(x,1))];
+    dh = [1,zeros(1,numel(x))];
   end
 end
 
@@ -69,7 +93,5 @@ function displayfun(X,num_t,num_x,num_u)
   x = reshape(x,num_x,num_t);
   u = reshape(u,num_u,num_t);
   figure(5);
-  plot3(x(1,:),x(2,:),x(3,:));
-  % plot(x(1,:),x(3,:));
-  % plot([0,cumsum(h)'],x(1,:));
+  plot(x(1,:),x(3,:));
 end

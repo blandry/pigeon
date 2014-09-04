@@ -1,5 +1,3 @@
-<?xml version="1.0"?>
-
 <robot name="pigeon">
   <link
     name="torso">
@@ -75,7 +73,7 @@
       xyz="0 -1 0" />
     <dynamics
       damping="0.0007" />
-  </joint>
+    </joint>
   <link
     name="tail">
     <inertial>
@@ -1078,22 +1076,25 @@
     <dynamics
       damping="0.0005" />
   </joint>
-
+<!--
   <transmission name="tail_roll_torque" type="SimpleTransmission" >
     <joint name="tail_roll" />
     <actuator name="tail_roll_servo"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+-->
   <transmission name="tail_pitch_torque" type="SimpleTransmission" >
     <joint name="tail_pitch" />
     <actuator name="tail_pitch_servo"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+<!--
   <transmission name="tail_yaw_torque" type="SimpleTransmission" >
     <joint name="tail_yaw" />
     <actuator name="tail_yaw_servo"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+-->
   <transmission name="left_shoulder_roll_torque" type="SimpleTransmission" >
     <joint name="left_shoulder_roll" />
     <actuator name="left_shoulder_roll_servo"/>
@@ -1224,68 +1225,67 @@
     <actuator name="right_fingers_pitch_servo"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-
   <force_element name="tail_force"> 
-    <wing chord=".14074" nominal_speed="1" profile="flat plate" span=".25727" stall_angle="181">
+    <wing chord=".14074" nominal_speed="7" profile="flat plate" span=".25727" stall_angle="181">
       <parent link="tail"/>
-  	<origin xyz="0 0 0" rpy="0 0 0"/> 
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
     </wing>
   </force_element>
   <force_element name="left_upper_wing_force"> 
-    <wing chord=".13969" nominal_speed="1" profile="flat plate" span=".03500" stall_angle="181">
+    <wing chord=".13969" nominal_speed="7" profile="flat plate" span=".03500" stall_angle="181">
       <parent link="left_upper_wing"/>
-  	<origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
     </wing>
   </force_element>
   <force_element name="left_mid_wing_force"> 
-    <wing chord=".15160" nominal_speed="1" profile="flat plate" span=".14611" stall_angle="181">
+    <wing chord=".15160" nominal_speed="7" profile="flat plate" span=".14611" stall_angle="181">
       <parent link="left_mid_wing"/>
-  	<origin xyz="0 0 0" rpy="0 0 0"/> 
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
     </wing>
   </force_element>
   <force_element name="left_hand_wing_force"> 
-    <wing chord=".11713" nominal_speed="1" profile="flat plate" span=".23045" stall_angle="181">
+    <wing chord=".11713" nominal_speed="7" profile="flat plate" span=".23045" stall_angle="181">
       <parent link="left_hand_wing"/>
-  	<origin xyz="0 0 0" rpy="0 0 0"/> 
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
     </wing>
   </force_element>
   <force_element name="right_upper_wing_force"> 
-    <wing chord=".13969" nominal_speed="1" profile="flat plate" span=".03500" stall_angle="181">
+    <wing chord=".13969" nominal_speed="7" profile="flat plate" span=".03500" stall_angle="181">
       <parent link="right_upper_wing"/>
-  	<origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
     </wing> 
   </force_element>
   <force_element name="right_mid_wing_force"> 
-    <wing chord=".15160" nominal_speed="1" profile="flat plate" span=".14611" stall_angle="181">
+    <wing chord=".15160" nominal_speed="7" profile="flat plate" span=".14611" stall_angle="181">
       <parent link="right_mid_wing"/>
-  	<origin xyz="0 0 0" rpy="0 0 0"/> 
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
     </wing>
   </force_element>
   <force_element name="right_hand_wing_force">
-    <wing chord=".11713" nominal_speed="1" profile="flat plate" span=".23045" stall_angle="181">
+    <wing chord=".11713" nominal_speed="7" profile="flat plate" span=".23045" stall_angle="181">
       <parent link="right_hand_wing"/>
-  	<origin xyz="0 0 0" rpy="0 0 0"/> 
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
     </wing> 
   </force_element>
-
   <!--
   <force_element name="tail_roll_spring">
     <torsional_spring stiffness="0.005" rest_angle="0">
       <joint name="tail_roll" />
     </torsional_spring>
   </force_element>
+  -->
   <force_element name="tail_pitch_spring">
     <torsional_spring stiffness="0.005" rest_angle="0">
       <joint name="tail_pitch" />
     </torsional_spring>
   </force_element>
+  <!--
   <force_element name="tail_yaw_spring">
     <torsional_spring stiffness="0.005" rest_angle="0">
       <joint name="tail_yaw" />
     </torsional_spring>
   </force_element>
   -->
-
   <force_element name="left_shoulder_roll_spring">
     <torsional_spring stiffness="0.1" rest_angle="0">
       <joint name="left_shoulder_roll" />
@@ -1321,7 +1321,6 @@
       <joint name="left_wrist_yaw" />
     </torsional_spring>
   </force_element>
-
   <!--
   <force_element name="left_hip_roll_spring">
     <torsional_spring stiffness="0.005" rest_angle="0">
@@ -1354,7 +1353,6 @@
     </torsional_spring>
   </force_element>
   -->
-
   <force_element name="right_shoulder_roll_spring">
     <torsional_spring stiffness="0.1" rest_angle="0">
       <joint name="right_shoulder_roll" />
@@ -1390,7 +1388,6 @@
       <joint name="right_wrist_yaw" />
     </torsional_spring>
   </force_element>
-
   <!--
   <force_element name="right_hip_roll_spring">
     <torsional_spring stiffness="0.005" rest_angle="0">
@@ -1423,5 +1420,4 @@
     </torsional_spring>
   </force_element>
   -->
-
 </robot>

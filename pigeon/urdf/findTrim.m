@@ -4,8 +4,7 @@ if (nargin<1)
   options.floating = true;
   p = RigidBodyManipulator('pigeon.URDF', options);
   
-  p = p.weldJoint('tail_roll');
-  p = p.weldJoint('tail_pitch');
+  p = p.weldJoint('tail_roll'); 
   p = p.weldJoint('tail_yaw');
   p = p.weldJoint('left_hip_roll');
   p = p.weldJoint('left_hip_pitch');
@@ -61,6 +60,7 @@ lb.right_elbow_yaw_servo = -Inf;  ub.right_elbow_yaw_servo = Inf;
 lb.right_wrist_roll_servo = -Inf;  ub.right_wrist_roll_servo = Inf;
 lb.right_wrist_pitch_servo = -Inf;  ub.right_wrist_pitch_servo = Inf;
 lb.right_wrist_yaw_servo = -Inf;  ub.right_wrist_yaw_servo = Inf;
+lb.tail_pitch_servo = -Inf; ub.tail_pitch_servo = Inf;
 
 A = [];
 
@@ -78,7 +78,6 @@ A = [];
         A = [A; double(pt)'];
     end
 
-
 addSymmetricConstraint('left_shoulder_roll','right_shoulder_roll');
 addSymmetricConstraint('left_shoulder_pitch','right_shoulder_pitch');
 addSymmetricConstraint('left_shoulder_yaw','right_shoulder_yaw');
@@ -86,7 +85,6 @@ addSymmetricConstraint('left_elbow_yaw','right_elbow_yaw');
 addSymmetricConstraint('left_wrist_roll','right_wrist_roll');
 addSymmetricConstraint('left_wrist_pitch','right_wrist_pitch');
 addSymmetricConstraint('left_wrist_yaw','right_wrist_yaw');
-
 
 xdot_ind = findCoordinateIndex(getStateFrame(p),'base_xdot');
 zdot_ind = findCoordinateIndex(getStateFrame(p),'base_zdot');
@@ -97,12 +95,13 @@ prog = addConstraint(prog,LinearConstraint(zeros(7,1),zeros(7,1),A));
 
 x0 = Point(getStateFrame(p));
 x0.base_xdot = 20;
-x0.base_z = 5;
+x0.base_z = 3;
 num_inputs = getNumInputs(p);
-num_states = getNumStates(p);
 u0 = zeros(num_inputs,1);
 
+%prog = prog.setSolverOptions('snopt','print','findTrim.out');
 w = prog.solve([double(x0);u0]); 
+num_states = getNumStates(p);
 xstar = w(1:num_states);
 ustar = w(num_states+1:end);
 
