@@ -1,4 +1,4 @@
-function [utraj_flapping, xtraj_flapping] = runDircolFlapping
+function [utraj, xtraj] = runDircolFlapping
 
 options.floating = true;
 p = RigidBodyManipulator('pigeon.URDF', options);
@@ -18,29 +18,31 @@ p = p.weldJoint('right_ankle_pitch');
 p = p.weldJoint('right_thumb_pitch');
 p = p.weldJoint('right_fingers_pitch');
 
-p = p.compile(); 
+p = p.compile();
+numstates = getNumStates(p);
 
 N = 21;
 minimum_duration = .5;
-maximum_duration = 2;
+maximum_duration = 3;
 prog = DircolTrajectoryOptimization(p,N,[minimum_duration maximum_duration]); 
-
 prog = prog.setSolverOptions('snopt','superbasicslimit',2000);
 % prog = prog.setCheckGrad(true);
-% prog = prog.addDisplayFunction(@(x)displayfun(x,N,p.getNumStates(),p.getNumInputs()));
+v = constructVisualizer(p);
+prog = prog.addDisplayFunction(@(x)displayfun(x,N,p.getNumStates(),p.getNumInputs(),v));
 
 % periodicity constraint
-per_tol = Inf*ones(p.getNumStates(),1); % ignores everything
-per_tol(findCoordinateIndex(getStateFrame(p),'base_z')) = .1; % except vertical position
-per_lb = -abs(per_tol);
-per_ub = abs(per_tol);
-per_A = [speye(numel(per_tol)),-speye(numel(per_tol))];
+per_lb = -.001*ones(numstates,1);
+per_ub = .001*ones(numstates,1);
+per_lb(findCoordinateIndex(getStateFrame(p),'base_x')) = -Inf; 
+per_ub(findCoordinateIndex(getStateFrame(p),'base_x')) = Inf;
+per_A = [speye(numstates),-speye(numstates)];
 periodicity_constraint = LinearConstraint(per_lb,per_ub,per_A);
-prog = prog.addStateConstraint(periodicity_constraint,{[1 N]});
 
 roll_index = findCoordinateIndex(getStateFrame(p),'base_roll');
 pitch_index = findCoordinateIndex(getStateFrame(p),'base_pitch');
 yaw_index = findCoordinateIndex(getStateFrame(p),'base_yaw');
+
+prog = prog.addStateConstraint(periodicity_constraint,{[1 N]});
 prog = prog.addRunningCost(@(t,x,u)cost(t,x,u,roll_index,pitch_index,yaw_index));
 prog = prog.addFinalCost(@finalcost);
 
@@ -60,19 +62,17 @@ toc
 if (nargout<1)
   v = constructVisualizer(p);
   v.playback_speed = .2;
-  v.playback(xtraj_flapping,struct('slider',true));
+  v.playback(xtraj,struct('slider',true));
 end
 
 end
 
 function [g,dg] = cost(t,x,u,roll_index,pitch_index,yaw_index)
-  
   Q = zeros(numel(x));
-  Q(roll_index,roll_index) = 1000;
+  Q(roll_index,roll_index) = 100;
   Q(pitch_index,pitch_index) = 10;
-  Q(yaw_index,yaw_index) = 1000;
-  R = zeros(numel(u));
-  
+  Q(yaw_index,yaw_index) = 100;
+  R = ones(numel(u));
   g = x'*Q*x + u'*R*u;
   if (nargout>1)
     dg = [0,2*x'*Q,2*u'*R];
@@ -86,12 +86,22 @@ function [h,dh] = finalcost(t,x)
   end
 end
 
-function displayfun(X,num_t,num_x,num_u)
+function displayfun(X,num_t,num_x,num_u,v)
   h = X(1:num_t-1);
   x = X(num_t-1+[1:num_x*num_t]);
   u = X(num_t-1+num_x*num_t+[1:num_u*num_t]);
   x = reshape(x,num_x,num_t);
   u = reshape(u,num_u,num_t);
+  tt = [0;cumsum(h)]';
   figure(5);
-  plot(x(1,:),x(3,:));
+  plot(tt,x(1,:));
+  title('x position');
+  figure(6);
+  plot(tt,x(3,:));
+  title('altitude');
+  xtraj = DTTrajectory(tt,x);
+  v = v.setInputFrame(xtraj.getOutputFrame());
+  v.playback_speed = .2;
+  display('Running vis...');
+  v.playback(xtraj);
 end
