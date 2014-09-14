@@ -1225,6 +1225,50 @@
     <actuator name="right_fingers_pitch_servo"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <!--
+  <force_element name="tail_force"> 
+    <wing chord=".14074" nominal_speed="10" profile="NACA0012" span=".25727" stall_angle="12">
+      <parent link="tail"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
+    </wing>
+  </force_element>
+  <force_element name="left_upper_wing_force"> 
+    <wing chord=".13969" nominal_speed="10" profile="NACA0012" span=".03500" stall_angle="12">
+      <parent link="left_upper_wing"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    </wing>
+  </force_element>
+  <force_element name="left_mid_wing_force"> 
+    <wing chord=".15160" nominal_speed="10" profile="NACA0012" span=".14611" stall_angle="12">
+      <parent link="left_mid_wing"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
+    </wing>
+  </force_element>
+  <force_element name="left_hand_wing_force"> 
+    <wing chord=".11713" nominal_speed="10" profile="NACA0012" span=".23045" stall_angle="12">
+      <parent link="left_hand_wing"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
+    </wing>
+  </force_element>
+  <force_element name="right_upper_wing_force"> 
+    <wing chord=".13969" nominal_speed="10" profile="NACA0012" span=".03500" stall_angle="12">
+      <parent link="right_upper_wing"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    </wing> 
+  </force_element>
+  <force_element name="right_mid_wing_force"> 
+    <wing chord=".15160" nominal_speed="10" profile="NACA0012" span=".14611" stall_angle="12">
+      <parent link="right_mid_wing"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
+    </wing>
+  </force_element>
+  <force_element name="right_hand_wing_force">
+    <wing chord=".11713" nominal_speed="10" profile="NACA0012" span=".23045" stall_angle="12">
+      <parent link="right_hand_wing"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
+    </wing> 
+  </force_element>
+  -->
   <force_element name="tail_force"> 
     <wing chord=".14074" nominal_speed="7" profile="flat plate" span=".25727" stall_angle="181">
       <parent link="tail"/>
