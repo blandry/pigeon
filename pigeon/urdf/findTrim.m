@@ -22,7 +22,7 @@ if (nargin<1)
   
 end
 
-prog = FixedPointProgram(p,[1;3;getNumPositions(p)+1]);  % ignores xdot, zdot, xdotdot constraints
+prog = FixedPointProgram(p,[1;3]);  % ignores xdot, zdot
 prog = prog.setSolverOptions('snopt','majoriterationslimit',2000);
 
 frame = MultiCoordinateFrame({getStateFrame(p); getInputFrame(p)});
@@ -51,6 +51,7 @@ lb.right_wrist_pitch = -1.5;  ub.right_wrist_pitch = 1.5;
 lb.right_wrist_yaw = -1.5;  ub.right_wrist_yaw = 1.5;
 
 lb.base_xdot = 0;  ub.base_xdot = 50;
+lb.base_zdot = -Inf; ub.base_zdot = Inf;
 
 lb.tail_pitch_servo = -Inf; ub.tail_pitch_servo = Inf;
 lb.left_shoulder_roll_servo = -Inf;  ub.left_shoulder_roll_servo = Inf;
@@ -67,7 +68,6 @@ lb.right_elbow_yaw_servo = -Inf;  ub.right_elbow_yaw_servo = Inf;
 lb.right_wrist_roll_servo = -Inf;  ub.right_wrist_roll_servo = Inf;
 lb.right_wrist_pitch_servo = -Inf;  ub.right_wrist_pitch_servo = Inf;
 lb.right_wrist_yaw_servo = -Inf;  ub.right_wrist_yaw_servo = Inf;
-lb.tail_pitch_servo = -Inf; ub.tail_pitch_servo = Inf;
 
 A = [];
   function addSymmetricConstraint(jointA,jointB)
