@@ -25,7 +25,7 @@ trim = load('trimConditions.mat');
 xstar = trim.xstar;
 ustar = trim.ustar;
 
-N = 15;
+N = 20;
 minimum_duration = .1;
 maximum_duration = 5;
 prog = DircolTrajectoryOptimization(p,N,[minimum_duration maximum_duration]); 
@@ -34,15 +34,16 @@ prog = prog.setSolverOptions('snopt','iterationslimit',50000);
 prog = prog.setSolverOptions('snopt','majoroptimalitytolerance',1e-3);
 
 % prog = prog.setCheckGrad(true);
-% v = constructVisualizer(p);
-% prog = prog.addDisplayFunction(@(x)displayfun(x,N,p.getNumStates(),p.getNumInputs(),v));
+v = constructVisualizer(p);
+prog = prog.addDisplayFunction(@(x)displayfun(x,N,p.getNumStates(),p.getNumInputs(),v));
 
 % limits on the states
 frame = getStateFrame(p);
 lb = Point(frame);
 ub = Point(frame);
+
 lb.base_x = 0; ub.base_x = Inf;
-lb.base_z = 2; ub.base_z = Inf;
+lb.base_z = 1; ub.base_z = Inf;
 lb.base_pitch = -1.5; ub.base_pitch = 1.5;
 lb.tail_pitch = -1.5; ub.tail_pitch = 1.5;
 lb.left_shoulder_roll = -1.5; ub.left_shoulder_roll = 1.5;
@@ -60,7 +61,7 @@ lb.right_wrist_roll = -1.5; ub.right_wrist_roll = 1.5;
 lb.right_wrist_pitch = -1.5; ub.right_wrist_pitch = 1.5;
 lb.right_wrist_yaw = -1.5; ub.right_wrist_yaw = 1.5;
 
-lb.base_xdot = 0; ub.base_xdot = 100;
+lb.base_xdot = 0.1; ub.base_xdot = 100;
 lb.base_zdot = -Inf; ub.base_zdot = Inf;
 lb.base_pitchdot = -Inf; ub.base_pitchdot = Inf;
 lb.tail_pitchdot = -Inf; ub.tail_pitchdot = Inf;
@@ -78,6 +79,7 @@ lb.right_elbow_yawdot = -Inf;  ub.right_elbow_yawdot = Inf;
 lb.right_wrist_rolldot = -Inf;  ub.right_wrist_rolldot = Inf;
 lb.right_wrist_pitchdot = -Inf;  ub.right_wrist_pitchdot = Inf;
 lb.right_wrist_yawdot = -Inf;  ub.right_wrist_yawdot = Inf;
+
 prog = addStateConstraint(prog,BoundingBoxConstraint(double(lb),double(ub)),1:N);
 
 % symmetry of some of the states
@@ -105,6 +107,9 @@ prog = addStateConstraint(prog,LinearConstraint(zeros(7,1),zeros(7,1),A),1:N);
 
 % periodicity constraint
 frame = getStateFrame(p);
+% lb = Point(frame);
+% ub = Point(frame);
+% lb.base_x = -Inf; ub.base_x = Inf;
 lb = Point(frame,-Inf);
 ub = Point(frame,Inf);
 lb.base_z = 0; ub.base_z = 0;
@@ -112,11 +117,14 @@ A = [speye(size(lb,1)),-speye(size(lb,1))];
 prog = addStateConstraint(prog,LinearConstraint(double(lb),double(ub),A),{[1 N]});
 
 % initial state constraint
-frame = getStateFrame(p);
-lb = Point(frame,-Inf);
-ub = Point(frame,Inf);
-lb.base_x = 0; ub.base_x = 0;
-prog = addStateConstraint(prog,BoundingBoxConstraint(double(lb),double(ub)),[1]);
+% frame = getStateFrame(p);
+% lb = Point(frame,-Inf);
+% ub = Point(frame,Inf);
+% lb.base_x = 0; ub.base_x = 0;
+% lb.base_z = 2; ub.base_z = 2;
+% prog = addStateConstraint(prog,BoundingBoxConstraint(double(lb),double(ub)),1);
+% xstar(1) = 0; 
+% xstar(3) = 2;
 
 % the cost functions
 prog = prog.addRunningCost(@(t,x,u)cost(t,x,u,xstar,ustar,getStateFrame(p),getInputFrame(p)));
@@ -163,46 +171,75 @@ function C = addCost(C,frame,name,cost)
 end
 
 function [g,dg] = cost(t,x,u,xstar,ustar,stateframe,inputframe)
-    Q = zeros(numel(x));
-    Q = addCost(Q,stateframe,'base_zdot',1);
-    Q = addCost(Q,stateframe,'base_roll',1);
-    Q = addCost(Q,stateframe,'base_pitch',1);
-    Q = addCost(Q,stateframe,'base_pitchdot',1);
-    Q = addCost(Q,stateframe,'base_yaw',1);
-    Q = addCost(Q,stateframe,'tail_pitch',1);
-    Q = addCost(Q,stateframe,'tail_pitchdot',1);
-    Q = addCost(Q,stateframe,'left_shoulder_yaw',0);
-    Q = addCost(Q,stateframe,'right_shoulder_yaw',0);
-    Q = addCost(Q,stateframe,'left_elbow_yaw',0);
-    Q = addCost(Q,stateframe,'right_elbow_yaw',0);
-    Q = addCost(Q,stateframe,'left_wrist_yaw',0);
-    Q = addCost(Q,stateframe,'right_wrist_yaw',0);
-    Q = addCost(Q,stateframe,'left_shoulder_rolldot',50);
-    Q = addCost(Q,stateframe,'left_shoulder_pitchdot',50);
-    Q = addCost(Q,stateframe,'left_shoulder_yawdot',50);
-    Q = addCost(Q,stateframe,'left_elbow_yawdot',50);
-    Q = addCost(Q,stateframe,'left_wrist_rolldot',50);
-    Q = addCost(Q,stateframe,'left_wrist_pitchdot',50);
-    Q = addCost(Q,stateframe,'left_wrist_yawdot',50);
-    Q = addCost(Q,stateframe,'right_shoulder_rolldot',50);
-    Q = addCost(Q,stateframe,'right_shoulder_pitchdot',50);
-    Q = addCost(Q,stateframe,'right_shoulder_yawdot',50);
-    Q = addCost(Q,stateframe,'right_elbow_yawdot',50);
-    Q = addCost(Q,stateframe,'right_wrist_rolldot',50);
-    Q = addCost(Q,stateframe,'right_wrist_pitchdot',50);
-    Q = addCost(Q,stateframe,'right_wrist_yawdot',50);
-    R = eye(numel(u));
-    R = addCost(R,inputframe,'tail_pitch_servo',10);
-    g = x'*Q*x + u'*R*u + 10*(x(1)-15)^2;
+    Q = 10*eye(numel(x));
+    Q = addCost(Q,stateframe,'base_zdot',1000);
+    Q = addCost(Q,stateframe,'left_shoulder_pitch',1000);
+    Q = addCost(Q,stateframe,'right_shoulder_pitch',1000);
+    R = 100*eye(numel(u));
+    g = (x-xstar)'*Q*(x-xstar) + (u-ustar)'*R*(u-ustar);
     if (nargout>1)
-      dg = [0,2*x'*Q,2*u'*R] + [0,10*2*(x(1)-15),zeros(1,numel(x)-1+numel(u))];
+      dg = [0,2*(x-xstar)'*Q,2*(u-ustar)'*R];
     end
+
+%     Q = zeros(numel(x));
+%
+%     Q = addCost(Q,stateframe,'base_pitch',5);
+%     Q = addCost(Q,stateframe,'tail_pitch',5);
+%     Q = addCost(Q,stateframe,'left_elbow_yaw',10);
+%     Q = addCost(Q,stateframe,'right_elbow_yaw',10);
+%     Q = addCost(Q,stateframe,'left_shoulder_yaw',10);
+%     Q = addCost(Q,stateframe,'right_shoulder_yaw',10);   
+%     Q = addCost(Q,stateframe,'left_shoulder_pitch',10);
+%     Q = addCost(Q,stateframe,'right_shoulder_pitch',10);
+%     Q = addCost(Q,stateframe,'left_wrist_yaw',10);
+%     Q = addCost(Q,stateframe,'right_wrist_yaw',10);
+%     Q = addCost(Q,stateframe,'left_wrist_pitch',50);
+%     Q = addCost(Q,stateframe,'right_wrist_pitch',50);
+%     
+%     Q = addCost(Q,stateframe,'base_xdot',10000);
+%     Q = addCost(Q,stateframe,'base_zdot',500);
+%     Q = addCost(Q,stateframe,'base_pitchdot',5);
+%     Q = addCost(Q,stateframe,'tail_pitchdot',10);
+%     
+%     Q = addCost(Q,stateframe,'left_shoulder_rolldot',5);
+%     Q = addCost(Q,stateframe,'left_shoulder_pitchdot',5);
+%     Q = addCost(Q,stateframe,'left_shoulder_yawdot',5);
+%     Q = addCost(Q,stateframe,'left_elbow_yawdot',5);
+%     Q = addCost(Q,stateframe,'left_wrist_rolldot',5);
+%     Q = addCost(Q,stateframe,'left_wrist_pitchdot',5);
+%     Q = addCost(Q,stateframe,'left_wrist_yawdot',5);
+%     Q = addCost(Q,stateframe,'right_shoulder_rolldot',5);
+%     Q = addCost(Q,stateframe,'right_shoulder_pitchdot',5);
+%     Q = addCost(Q,stateframe,'right_shoulder_yawdot',5);
+%     Q = addCost(Q,stateframe,'right_elbow_yawdot',5);
+%     Q = addCost(Q,stateframe,'right_wrist_rolldot',5);
+%     Q = addCost(Q,stateframe,'right_wrist_pitchdot',5);
+%     Q = addCost(Q,stateframe,'right_wrist_yawdot',5);
+%     
+%     R = eye(numel(u));
+%     
+%     g = x'*Q*x + u'*R*u;
+%     if (nargout>1)
+%       dg = [0,2*x'*Q,2*u'*R];
+%     end
+%     
+%     % this needs to have an x0 constraint to work
+%     g = g + 500*(x(1)-15)^2;
+%     if (nargout>1)
+%       dg = dg + [0,500*2*(x(1)-15),zeros(1,numel(x)-1+numel(u))];
+%     end
+%     
+%     g = g + 10000*(x(3)-2)^2;
+%     if (nargout>1)
+%       dg = dg + [0,0,0,10000*2*(x(3)-2),zeros(1,numel(x)-3+numel(u))];
+%     end
+
 end
 
 function [h,dh] = finalcost(t,x)
-  h = t;
+  h = 0.01*t;
   if (nargout>1)
-    dh = [1,zeros(1,numel(x))];
+    dh = [0.01,zeros(1,numel(x))];
   end
 end
 
