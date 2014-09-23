@@ -25,7 +25,7 @@ trim = load('trimConditions.mat');
 xstar = trim.xstar;
 ustar = trim.ustar;
 
-N = 20;
+N = 10;
 minimum_duration = .1;
 maximum_duration = 5;
 prog = DircolTrajectoryOptimization(p,N,[minimum_duration maximum_duration]); 
@@ -106,25 +106,25 @@ addSymmetricConstraint('left_wrist_yaw','right_wrist_yaw');
 prog = addStateConstraint(prog,LinearConstraint(zeros(7,1),zeros(7,1),A),1:N);
 
 % periodicity constraint
-frame = getStateFrame(p);
+% frame = getStateFrame(p);
 % lb = Point(frame);
 % ub = Point(frame);
 % lb.base_x = -Inf; ub.base_x = Inf;
-lb = Point(frame,-Inf);
-ub = Point(frame,Inf);
-lb.base_z = 0; ub.base_z = 0;
-A = [speye(size(lb,1)),-speye(size(lb,1))];
-prog = addStateConstraint(prog,LinearConstraint(double(lb),double(ub),A),{[1 N]});
-
-% initial state constraint
-% frame = getStateFrame(p);
 % lb = Point(frame,-Inf);
 % ub = Point(frame,Inf);
-% lb.base_x = 0; ub.base_x = 0;
-% lb.base_z = 2; ub.base_z = 2;
-% prog = addStateConstraint(prog,BoundingBoxConstraint(double(lb),double(ub)),1);
-% xstar(1) = 0; 
-% xstar(3) = 2;
+% lb.base_z = 0; ub.base_z = 0;
+% A = [speye(size(lb,1)),-speye(size(lb,1))];
+% prog = addStateConstraint(prog,LinearConstraint(double(lb),double(ub),A),{[1 N]});
+
+% initial state constraint
+frame = getStateFrame(p);
+lb = Point(frame,-Inf);
+ub = Point(frame,Inf);
+lb.base_x = 0; ub.base_x = 0;
+lb.base_z = 2; ub.base_z = 2;
+prog = addStateConstraint(prog,BoundingBoxConstraint(double(lb),double(ub)),1);
+xstar(1) = 0; 
+xstar(3) = 2;
 
 % the cost functions
 prog = prog.addRunningCost(@(t,x,u)cost(t,x,u,xstar,ustar,getStateFrame(p),getInputFrame(p)));
@@ -171,15 +171,16 @@ function C = addCost(C,frame,name,cost)
 end
 
 function [g,dg] = cost(t,x,u,xstar,ustar,stateframe,inputframe)
-    Q = 10*eye(numel(x));
-    Q = addCost(Q,stateframe,'base_zdot',1000);
-    Q = addCost(Q,stateframe,'left_shoulder_pitch',1000);
-    Q = addCost(Q,stateframe,'right_shoulder_pitch',1000);
-    R = 100*eye(numel(u));
-    g = (x-xstar)'*Q*(x-xstar) + (u-ustar)'*R*(u-ustar);
-    if (nargout>1)
-      dg = [0,2*(x-xstar)'*Q,2*(u-ustar)'*R];
-    end
+
+%     Q = 10*eye(numel(x));
+%     Q = addCost(Q,stateframe,'base_zdot',1000);
+%     Q = addCost(Q,stateframe,'left_shoulder_pitch',1000);
+%     Q = addCost(Q,stateframe,'right_shoulder_pitch',1000);
+%     R = 100*eye(numel(u));
+%     g = (x-xstar)'*Q*(x-xstar) + (u-ustar)'*R*(u-ustar);
+%     if (nargout>1)
+%       dg = [0,2*(x-xstar)'*Q,2*(u-ustar)'*R];
+%     end
 
 %     Q = zeros(numel(x));
 %
@@ -233,6 +234,12 @@ function [g,dg] = cost(t,x,u,xstar,ustar,stateframe,inputframe)
 %     if (nargout>1)
 %       dg = dg + [0,0,0,10000*2*(x(3)-2),zeros(1,numel(x)-3+numel(u))];
 %     end
+
+    R = 100*eye(numel(u));
+    g = (x(1)-15)^2+(x(3)-2)^2+u'*R*u;
+    if (nargout>1)
+        dg = [0,2*(x(1)-15),0,2*(x(3)-2),zeros(1,numel(x)-3),2*u'*R];
+    end
 
 end
 
